@@ -1,4 +1,4 @@
-from dash import html, dcc, callback, Input, Output, MATCH, dash_table, State
+from dash import html, dcc, callback, Input, Output, MATCH, dash_table
 import dash
 import dash_mantine_components as dmc
 import dash_bootstrap_components as dbc
@@ -14,6 +14,7 @@ from collections import Counter
 def ambientes_form(ambientes: dict):
 
     ambientes = dict(list(ambientes.items()))
+
 
     conteudo = html.Div([
         
@@ -66,7 +67,7 @@ def create_ambientes_field(newindex, esquadrias, ambiente):
                 },
                 style_data_conditional=[
                     {
-                        'if': {'state': 'active'},
+                        # 'if': {'Input': 'active'},
                         'backgroundColor': 'transparent',
                         'textAlign': 'center',
                     }
@@ -115,7 +116,7 @@ def create_ambientes_field(newindex, esquadrias, ambiente):
 
             ]),
             
-            html.Div(id={'type': 'ambiente-esquadria-campos-caculados', 'index': newindex},),
+            html.Div(id={'type': 'ambiente-esquadria-campos-calculados', 'index': newindex},),
             fac.AntdDivider(),
         ]
     )
@@ -127,13 +128,28 @@ def create_ambientes_field(newindex, esquadrias, ambiente):
 @callback(
     Output({'type': 'quantidade-ambiente-esquadria', 'index': MATCH}, 'data'),
     Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'value'),
+    Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'children'),
     Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'id'),
     Input('ambientes', 'data'),
+    # Input('editable-table', 'data'),
+    prevent_initial_call='initial_duplicate',
 )
-def update_quantidade_esquadrias(indicadores, id, ambientes):
+def update_quantidade_esquadrias(inds, children, id, ambientes):
 
-    ambiente = ambientes.get(id.get('index'), {'esquadrias': 'indicador1', 'quantidade': 1})  # Dicionário {'esquadrias': 'indicador1', 'quantidade': 1}
+
+    valores = [child['props']['value'] for child in children['props']['children']]
+    ambiente = ambientes.get(id.get('index')) 
     qtdade_esquadrias = ambiente.get('qtdade_esquadrias', [])
+
+    # Adiciona um item {'esquadrias': 'indicador1', 'quantidade': 1} para cada indicador selecionado que não esteja na lista
+    for indicador in inds:
+        if indicador not in [item['esquadrias'] for item in qtdade_esquadrias]:
+            qtdade_esquadrias.append({'esquadrias': indicador, 'quantidade': 1})
+
+    qtdade_esquadrias = [item for item in qtdade_esquadrias if item['esquadrias'] in inds]
+    indicadores_temp = [qtdade_esquadrias[i]['esquadrias'] for i in range(len(qtdade_esquadrias))]
+    indicadores = [x for x in indicadores_temp if x in valores]
+
     data = []
     
     for indicador in indicadores:
@@ -153,7 +169,7 @@ def update_quantidade_esquadrias(indicadores, id, ambientes):
     Output("campos-ambientes", "children", allow_duplicate=True),
     Input("add-btn-ambiente", "n_clicks"),
     Input("campos-ambientes", "children"),
-    State('editable-table', 'data'),
+    Input('editable-table', 'data'),
     Input('ambientes', 'data'),
     prevent_initial_call='initial_duplicate',
 )
@@ -176,7 +192,7 @@ def add_field_ambiente(n_clicks, children, esquadrias, ambientes):
 
 @callback(
     Output('campos-ambientes', 'children'),
-    State('editable-table', 'data'),
+    Input('editable-table', 'data'),
     Input('ambientes', 'data'),
 )
 def campos_ambiente(esquadrias, ambientes):
@@ -195,43 +211,38 @@ def campos_ambiente(esquadrias, ambientes):
 ##########################################################################################################
 
 @callback(
-    Output({'type': 'ambiente-esquadria-campos-caculados', 'index': MATCH}, 'children'),
+    Output({'type': 'ambiente-esquadria-campos-calculados', 'index': MATCH}, 'children'),
+    # Output({'type': 'quantidade-ambiente-esquadria', 'index': MATCH}, 'data'),
     Input({'type': 'area_ambiente', 'index': MATCH}, 'value'),
-    Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'value'),
-    State('editable-table', 'data'),
+    Input({'type': 'quantidade-ambiente-esquadria', 'index': MATCH}, 'data'),
+    # Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'value'),
+    Input('editable-table', 'data'),
     Input('zona_bioclimatica', 'value'),
     Input('regiao', 'value'),
     Input({'type': 'quantidade-ambiente-esquadria', 'index': MATCH}, 'data'),
 )
 def campos_ambientes_calculados_esquadrias(area_ambiente, indicadores, esquadrias, zona_bioclimatica, regiao, qtdade):
 
-    indicadores_original = indicadores
+    indicadores = pd.DataFrame(indicadores)
+    indicadores = indicadores.rename(columns={'esquadrias': 'Indicador'})
 
     if len(indicadores) > 0:
-
-        indicadores = [
-            item['esquadrias'] 
-            for item in qtdade 
-            for _ in range(int(item['quantidade']))
-        ]
-        # Conta quantas vezes cada indicador aparece
-        contagens = Counter(indicadores)
 
         # Motando as esquadrias em um dataframe
         esquadrias = pd.DataFrame(esquadrias)
 
         # Filtra apenas os indicadores presentes em indicadores_original
-        esquadrias_filtradas = esquadrias[esquadrias['Indicador'].isin(indicadores_original)].copy()
+        esquadrias_filtradas = esquadrias.copy()
 
         # Adiciona a quantidade conforme contagem
-        esquadrias_filtradas['quantidade'] = esquadrias_filtradas['Indicador'].map(contagens).fillna(0)
+        esquadrias_filtradas = esquadrias_filtradas.merge(indicadores, on='Indicador', how='left')
 
         # Soma ponderada pela quantidade
         soma_area_janelas = (esquadrias_filtradas['Área [m²]'] * esquadrias_filtradas['quantidade']).sum()
 
         childrens = []
 
-        for index, indicador_ambiente in enumerate(indicadores):
+        for index, indicador_ambiente in enumerate(esquadrias_filtradas['Indicador']):
 
             # Coeficiente de vidro
             coef_vidro = esquadrias[esquadrias['Indicador'] == indicador_ambiente]['Coeficiente de vidro'].values[0]
@@ -326,7 +337,8 @@ def campos_ambientes_calculados_esquadrias(area_ambiente, indicadores, esquadria
 
         childrens.append(children_areas_ponderadas_abertura)
         childrens.append(children_areas_ponderadas_vidro)
-    
+
+
         return childrens
 
 ##########################################################################################################

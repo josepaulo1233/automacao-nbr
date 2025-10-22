@@ -1011,6 +1011,34 @@ def update_content(id_projeto):
      
 ####################################################################################################################################################################
 
+def extrair_values_esquadrias(esquadrias_dict):
+
+    import numpy as np
+
+    """
+    Extrai o 'value' de campos que contêm estrutura com 'options'
+    e converte valores None para np.nan
+    """
+    resultado = {}
+    
+    for idx, dados in esquadrias_dict.items():
+        novo_dados = {}
+        
+        for chave, valor in dados.items():
+            # Se o valor é um dicionário e contém 'value' e 'options'
+            if isinstance(valor, dict) and 'value' in valor and 'options' in valor:
+                # Extrai apenas o value, convertendo None para np.nan
+                novo_dados[chave] = valor['value'] if valor['value'] is not None else np.nan
+            else:
+                # Mantém o valor original
+                novo_dados[chave] = valor
+        
+        resultado[idx] = novo_dados
+    
+    return resultado
+
+####################################################################################################################################################################
+
 @callback(
 Output("json-projeto", "data"),
 Output("modal-confirmacao", "is_open", allow_duplicate=True),
@@ -1076,8 +1104,6 @@ prevent_initial_call='initial_duplicate',
 def salvar_infos(*valores):
     
     if ctx.triggered_id == "enviar-banco-btn" and valores[0] > 0:
-
-        # Montando o template para enviar ao banco de dados
 
         ##################### CHECKLISTS #######################
         secoes = {
@@ -1288,8 +1314,22 @@ def salvar_infos(*valores):
         }
 
         ##################### ESQUADRIAS #######################
-        # esquadrias = {f'esquadria{i+1}': dados for i, dados in enumerate(valores[24])}
         esquadrias = {i: dados for i, dados in enumerate(valores[24])}
+
+        # Continua aplicando extração enquanto houver campos aninhados
+        while True:
+            tem_aninhamento = False
+            if esquadrias:
+                primeira_esquadria = next(iter(esquadrias.values()))
+                for valor in primeira_esquadria.values():
+                    if isinstance(valor, dict) and 'value' in valor and 'options' in valor:
+                        tem_aninhamento = True
+                        break
+            
+            if not tem_aninhamento:
+                break
+                
+            esquadrias = extrair_values_esquadrias(esquadrias)
 
         ##################### MATERIAIS #######################
         materiais_data = valores[25]

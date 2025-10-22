@@ -12,39 +12,50 @@ from db.db_local import get_db_colection
 
 ##########################################################################################################
 
+def extrair_values_esquadrias(esquadrias_dict):
+
+    import numpy as np
+
+    """
+    Extrai o 'value' de campos que contêm estrutura com 'options'
+    e converte valores None para np.nan
+    """
+    resultado = {}
+    
+    for idx, dados in esquadrias_dict.items():
+        novo_dados = {}
+        
+        for chave, valor in dados.items():
+            # Se o valor é um dicionário e contém 'value' e 'options'
+            if isinstance(valor, dict) and 'value' in valor and 'options' in valor:
+                # Extrai apenas o value, convertendo None para np.nan
+                novo_dados[chave] = valor['value'] if valor['value'] is not None else np.nan
+            else:
+                # Mantém o valor original
+                novo_dados[chave] = valor
+        
+        resultado[idx] = novo_dados
+    
+    return resultado
+
+
 def esquadrias_form(esquadrias: dict):
 
-    # Se o dicionário estiver vazio, inicializa com uma linha padrão
-    # if not esquadrias:
-    #     esquadrias = {
-    #         0: {
-    #             'index': 0,
-    #             'indicador': 'Esquadria 1',
-    #             'largura': 1.0,
-    #             'altura': 1.0,
-    #             'area': 1.0,
-    #             'parapeito': 0.0,
-    #             'numero_molduras': 0,
-    #             'espessura_moldura': 0.05,
-    #             'tipo_vidro': None,
-    #             'divisores_horizontais': 0,
-    #             'divisores_verticais': 0,
-    #             'espessura_divisores': 0.02,
-    #             'folhas_vidro_horizontal': 1,
-    #             'folhas_vidro_vertical': 1,
-    #             'tipo_janela': None,
-    #             'coef_abertura': None,
-    #             'coef_vidro': None,
-    #             'cor_caixilho': None,
-    #             'transmitancia_luminosa': None,
-    #             'transmitancia_termica': None,
-    #             'fator_solar': None,
-    #             'largura_folhas_vidro': None,
-    #             'altura_folhas_vidro': None,
-    #             'area_total_vidro': None,
-    #         }
-    #     }
-
+    # Continua aplicando extração enquanto houver campos aninhados
+    while True:
+        tem_aninhamento = False
+        if esquadrias:
+            primeira_esquadria = next(iter(esquadrias.values()))
+            for valor in primeira_esquadria.values():
+                if isinstance(valor, dict) and 'value' in valor and 'options' in valor:
+                    tem_aninhamento = True
+                    break
+        
+        if not tem_aninhamento:
+            break
+            
+        esquadrias = extrair_values_esquadrias(esquadrias)
+    
     # Ordem das esquadrias
     ordem_colunas = [
         'index',
@@ -374,11 +385,12 @@ def caracteristicas_das_esquadrias(data):
         else:
             tipo_de_janela = tipo_janela_obj
 
-        if isinstance(tipo_de_janela, dict):
-            tipo_de_janela = tipo_de_janela.get('value')
+        # if isinstance(tipo_de_janela, dict):
+        #     tipo_de_janela = tipo_de_janela.get('value')
 
-        # print(tipo_de_janela)
-        
+        # if isinstance(tipo_de_janela, dict):
+        #     tipo_de_janela = tipo_de_janela.get('value')
+
         coef_abertura = coeficientes_janela.get(tipo_de_janela, {}).get('Coef de abertura')
         coef_vidro = coeficientes_janela.get(tipo_de_janela, {}).get('Coef. De vidro')
         
@@ -437,8 +449,8 @@ def caracteristicas_das_esquadrias(data):
         else:
             tipo_vidro_value = tipo_vidro_obj
         
-        if isinstance(tipo_vidro_value, dict):
-            tipo_vidro_value = tipo_vidro_value.get('value')
+        # if isinstance(tipo_vidro_value, dict):
+        #     tipo_vidro_value = tipo_vidro_value.get('value')
 
         if tipo_vidro_value and 'vidros' in vidros:
             vidros_list = vidros['vidros']
