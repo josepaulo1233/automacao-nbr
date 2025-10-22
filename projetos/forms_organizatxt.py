@@ -18,7 +18,6 @@ def forms_organiza_txt():
     # from utils.informacoes import ambientes
 
     ambientes = get_ambientes()
-    print(ambientes)
     ambientes = ambientes.dropna(axis=1)
 
     conteudo_txt = html.Div([

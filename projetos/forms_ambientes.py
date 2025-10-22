@@ -1,4 +1,4 @@
-from dash import html, dcc, callback, Input, Output, MATCH, dash_table
+from dash import html, dcc, callback, Input, Output, MATCH, dash_table, State
 import dash
 import dash_mantine_components as dmc
 import dash_bootstrap_components as dbc
@@ -153,7 +153,7 @@ def update_quantidade_esquadrias(indicadores, id, ambientes):
     Output("campos-ambientes", "children", allow_duplicate=True),
     Input("add-btn-ambiente", "n_clicks"),
     Input("campos-ambientes", "children"),
-    Input('editable-table', 'data'),
+    State('editable-table', 'data'),
     Input('ambientes', 'data'),
     prevent_initial_call='initial_duplicate',
 )
@@ -176,7 +176,7 @@ def add_field_ambiente(n_clicks, children, esquadrias, ambientes):
 
 @callback(
     Output('campos-ambientes', 'children'),
-    Input('editable-table', 'data'),
+    State('editable-table', 'data'),
     Input('ambientes', 'data'),
 )
 def campos_ambiente(esquadrias, ambientes):
@@ -198,7 +198,7 @@ def campos_ambiente(esquadrias, ambientes):
     Output({'type': 'ambiente-esquadria-campos-caculados', 'index': MATCH}, 'children'),
     Input({'type': 'area_ambiente', 'index': MATCH}, 'value'),
     Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'value'),
-    Input('editable-table', 'data'),
+    State('editable-table', 'data'),
     Input('zona_bioclimatica', 'value'),
     Input('regiao', 'value'),
     Input({'type': 'quantidade-ambiente-esquadria', 'index': MATCH}, 'data'),

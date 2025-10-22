@@ -19,9 +19,6 @@ warnings.filterwarnings("ignore")
 
 _dash_renderer._set_react_version("18.2.0")
 
-# usuarios = get_users()
-# credentials = usuarios.get('credentials')
-
 app = dash.Dash(__name__, 
                 external_stylesheets=[dbc.themes.FLATLY, 'https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css', 'https://fonts.googleapis.com/css?family=Poppins'], 
                 suppress_callback_exceptions=True,
