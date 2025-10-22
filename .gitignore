@@ -1,0 +1,14 @@
+mitsid_env
+venv
+**/__pycache__/
+**/*.pyc
+*pptx
+tests
+/key.json
+.env
+upload
+outputs
+.log
+backup/local_database.db
+tmp/
+arquivos/

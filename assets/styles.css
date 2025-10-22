@@ -1,0 +1,137 @@
+* {
+  box-sizing: border-box;
+}
+
+.main {
+
+  font-family: Lato;
+
+}
+
+.input-custom {
+
+  border-top: 0px;
+  border-right: 0px;
+  border-left: 0px;
+  border-bottom: 1px solid;
+  border-radius: 0;
+  /* text-align: center; */
+  font-family: Lato;
+  /* font-weight: bold; */
+
+}
+
+.content {
+
+    padding: 2rem 1rem;
+}
+
+.input-custom {
+
+  border-top: 0px;
+  border-right: 0px;
+  border-left: 0px;
+  border-bottom: 1px solid;
+  border-radius: 0;
+  /* text-align: center; */
+  font-family: Lato;
+  /* font-weight: bold; */
+
+}
+
+.input-custom-ni{
+
+  border-top: 0px;
+  border-right: 0px;
+  border-left: 0px;
+  border-bottom: 1px solid;
+  border-radius: 0;
+  /* text-align: center; */
+  font-family: Lato;
+  /* font-weight: bold; */
+
+}
+
+.title-custom {
+  font-weight: bold;
+  font-family: Lato;
+}
+
+.label-custon-div {
+  font-family: Lato;
+}
+
+.label-custon2-div {
+  font-family: Lato;
+  color: red;
+  font-size: 15px;
+}
+
+.item-custom {
+
+  font-family: Lato;
+
+}
+
+.tabLabel-custon {
+  font-family: Lato;
+  font-size: 15px;
+  color: black;
+}
+
+.control-custon{
+
+  border: 0px;
+  background-color: none;
+}
+
+.rightSection-custom{
+
+  border: 0px;
+}
+
+.rightSection-custom-ni{
+
+  border: 0px;
+}
+
+._dash-loading {
+
+  margin: auto;
+  color: transparent;
+  width: 0;
+  height: 0;
+  text-align: center;
+  display: none;
+
+}
+
+.dash-spreadsheet .Select-option {
+    color: black !important;
+}
+
+.ant-menu-light .ant-menu-item, .ant-menu-light>.ant-menu .ant-menu-item, .ant-menu-light .ant-menu-submenu-title, .ant-menu-light>.ant-menu .ant-menu-submenu-title {
+    color: black; 
+    border: none;
+}
+
+.ant-menu-light .ant-menu-item-selected, .ant-menu-light>.ant-menu .ant-menu-item-selected {
+    color: black
+}
+
+.ant-menu-light .ant-menu-submenu-selected>.ant-menu-submenu-title, .ant-menu-light>.ant-menu .ant-menu-submenu-selected>.ant-menu-submenu-title {
+    color: black;
+}
+
+.ant-menu-light.ant-menu-root.ant-menu-inline, .ant-menu-light>.ant-menu.ant-menu-root.ant-menu-inline, .ant-menu-light.ant-menu-root.ant-menu-vertical, .ant-menu-light>.ant-menu.ant-menu-root.ant-menu-vertical {
+  border: none;
+  border-inline-end: none;
+}
+
+/* div[data-node-key] span {
+    color: green !important;
+} */
+
+/* .ant-tabs-ink-bar {
+    background-color: green !important; 
+} */
