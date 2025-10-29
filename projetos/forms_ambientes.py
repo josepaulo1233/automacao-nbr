@@ -215,13 +215,13 @@ def campos_ambiente(esquadrias, ambientes):
     # Output({'type': 'quantidade-ambiente-esquadria', 'index': MATCH}, 'data'),
     Input({'type': 'area_ambiente', 'index': MATCH}, 'value'),
     Input({'type': 'quantidade-ambiente-esquadria', 'index': MATCH}, 'data'),
-    # Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'value'),
     Input('editable-table', 'data'),
     Input('zona_bioclimatica', 'value'),
     Input('regiao', 'value'),
-    Input({'type': 'quantidade-ambiente-esquadria', 'index': MATCH}, 'data'),
+    # Input({'type': 'quantidade-ambiente-esquadria', 'index': MATCH}, 'data'),
+    Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'value'),
 )
-def campos_ambientes_calculados_esquadrias(area_ambiente, indicadores, esquadrias, zona_bioclimatica, regiao, qtdade):
+def campos_ambientes_calculados_esquadrias(area_ambiente, indicadores, esquadrias, zona_bioclimatica, regiao, esquadrias_selecionadas):
 
     indicadores = pd.DataFrame(indicadores)
     indicadores = indicadores.rename(columns={'esquadrias': 'Indicador'})
@@ -237,12 +237,15 @@ def campos_ambientes_calculados_esquadrias(area_ambiente, indicadores, esquadria
         # Adiciona a quantidade conforme contagem
         esquadrias_filtradas = esquadrias_filtradas.merge(indicadores, on='Indicador', how='left')
 
+        # Transforma a quntidade em numérico
+        esquadrias_filtradas['quantidade'] = pd.to_numeric(esquadrias_filtradas['quantidade'], errors='coerce').fillna(0)
+
         # Soma ponderada pela quantidade
         soma_area_janelas = (esquadrias_filtradas['Área [m²]'] * esquadrias_filtradas['quantidade']).sum()
 
         childrens = []
 
-        for index, indicador_ambiente in enumerate(esquadrias_filtradas['Indicador']):
+        for index, indicador_ambiente in enumerate(esquadrias_filtradas[esquadrias_filtradas['Indicador'].isin(esquadrias_selecionadas)]['Indicador'].unique()):
 
             # Coeficiente de vidro
             coef_vidro = esquadrias[esquadrias['Indicador'] == indicador_ambiente]['Coeficiente de vidro'].values[0]

@@ -1592,7 +1592,13 @@ def salvar_vidro_custom(n_clicks, cor_caixilho, tipo_vidro, fator_solar, transmi
 
     if ctx.triggered_id == "btn-submit-vidrocustom":
 
-        resultado = add_vidro_custom(cor_caixilho, tipo_vidro, fator_solar, transmitancia_luminosa, transmitancia_termica)
+        resultado = add_vidro_custom(
+            cor_caixilho=cor_caixilho, 
+            tipo_de_vidro=tipo_vidro, 
+            fator_solar=fator_solar, 
+            trans_luminosa=transmitancia_luminosa, 
+            trans_termica=transmitancia_termica
+            )
 
         if resultado:
             return dmc.Alert("Vidro adicionado com sucesso!", color="green", duration=1000)
