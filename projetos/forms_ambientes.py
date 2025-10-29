@@ -8,13 +8,14 @@ import numpy as np
 from utils.styles import input_classnames, number_input_classnames
 import feffery_antd_components as fac
 from collections import Counter
+import json
 
 ##########################################################################################################
 
 def ambientes_form(ambientes: dict):
 
+    # Manter a ordem original dos ambientes
     ambientes = dict(list(ambientes.items()))
-
 
     conteudo = html.Div([
         
@@ -27,6 +28,7 @@ def ambientes_form(ambientes: dict):
                    ),
         
         dcc.Store(id="ambientes", data=ambientes),
+        dcc.Store(id="ambiente-counter", data=len(ambientes)),
         html.Div(id="campos-ambientes", children=[]),
     
     ])
@@ -39,20 +41,42 @@ def create_ambientes_field(newindex, esquadrias, ambiente):
 
     esquadrias = pd.DataFrame(esquadrias)
 
-    children = html.Div(
+    if 'ambiente' not in str(newindex):
+        newindex_checkbox = f'ambiente{newindex}'
+    else:
+        newindex_checkbox = newindex
 
-        [
-            dmc.CheckboxGroup(
-                id={'type': 'ambiente-esquadria-checkbox', 'index': newindex},
-                label="Selecione os indicadores dentro do ambiente",
-                withAsterisk=True,
+    children = html.Div([
+
+        # Cabeçalho do ambiente com botão de deletar
+        dbc.Row([
+            dbc.Col([
+                html.H5(f"Ambiente {newindex_checkbox}", className="fw-bold mb-3")
+            ], width=10),
+            dbc.Col([
+                dmc.Button(
+                    f"Deletar {newindex_checkbox}",
+                    leftSection=DashIconify(icon="ic:baseline-delete"),
+                    size="sm",
+                    color="red",
+                    variant="outline",
+                    id={'type': 'delete-ambiente-btn', 'index': newindex_checkbox},
+                    n_clicks=0,
+                )
+            ], width=2, className="text-end"),
+        ], className="mb-3"),
+
+        dmc.CheckboxGroup(
+            id={'type': 'ambiente-esquadria-checkbox', 'index': newindex_checkbox},
+            label="Selecione os indicadores dentro do ambiente",
+            withAsterisk=True,
+            mt=10,
+            children=dmc.Group(
+                [dmc.Checkbox(label=x, value=x) for x in esquadrias['Indicador']],
                 mt=10,
-                children=dmc.Group(
-                    [dmc.Checkbox(label=x, value=x) for x in esquadrias['Indicador']],
-                    mt=10,
-                ),
-                value=ambiente.get('esquadrias', []),
             ),
+            value=ambiente.get('esquadrias', []),
+        ),
 
             html.Div([
                 
@@ -118,7 +142,8 @@ def create_ambientes_field(newindex, esquadrias, ambiente):
             
             html.Div(id={'type': 'ambiente-esquadria-campos-calculados', 'index': newindex},),
             fac.AntdDivider(),
-        ]
+        ],
+        id={'type': 'ambiente-container', 'index': newindex_checkbox}  # Container para facilitar remoção
     )
 
     return children
@@ -131,11 +156,8 @@ def create_ambientes_field(newindex, esquadrias, ambiente):
     Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'children'),
     Input({'type': 'ambiente-esquadria-checkbox', 'index': MATCH}, 'id'),
     Input('ambientes', 'data'),
-    # Input('editable-table', 'data'),
-    prevent_initial_call='initial_duplicate',
 )
 def update_quantidade_esquadrias(inds, children, id, ambientes):
-
 
     valores = [child['props']['value'] for child in children['props']['children']]
     ambiente = ambientes.get(id.get('index')) 
@@ -166,47 +188,117 @@ def update_quantidade_esquadrias(inds, children, id, ambientes):
 ##########################################################################################################
 
 @callback(
-    Output("campos-ambientes", "children", allow_duplicate=True),
-    Input("add-btn-ambiente", "n_clicks"),
-    Input("campos-ambientes", "children"),
-    Input('editable-table', 'data'),
-    Input('ambientes', 'data'),
-    prevent_initial_call='initial_duplicate',
+    [Output("campos-ambientes", "children", allow_duplicate=True),
+     Output("ambiente-counter", "data", allow_duplicate=True),
+     Output("ambientes", "data", allow_duplicate=True)],
+    [Input("add-btn-ambiente", "n_clicks"),
+     Input({'type': 'delete-ambiente-btn', 'index': dash.dependencies.ALL}, 'n_clicks')],
+    [dash.dependencies.State("campos-ambientes", "children"),
+     dash.dependencies.State('editable-table', 'data'),
+     dash.dependencies.State('ambientes', 'data'),
+     dash.dependencies.State("ambiente-counter", "data")],
+    prevent_initial_call=True,
 )
-def add_field_ambiente(n_clicks, children, esquadrias, ambientes):
-
-    ctx=dash.callback_context
-    x = ctx.triggered_id
-
-    if x == 'add-btn-ambiente':
-
-        new_index = len(children)
-        new_field = create_ambientes_field(new_index, esquadrias, ambientes)
-        children.append(new_field) 
-
-        return children    
-
-    return dash.no_update
+def manage_ambientes(add_clicks, delete_clicks, children, esquadrias, ambientes, counter):
+    
+    ctx = dash.callback_context
+    
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update, dash.no_update
+    
+    triggered_prop = ctx.triggered[0]['prop_id']
+    
+    # Adicionar novo ambiente
+    if 'add-btn-ambiente' in triggered_prop:
+        if add_clicks and add_clicks > 0 and esquadrias:
+            new_counter = (counter or 0) + 1
+            new_index = f'ambiente{new_counter}'
+            
+            # Criar novo ambiente vazio
+            novo_ambiente = {
+                'esquadrias': [],
+                'area_ambiente': 1,
+                'ambiente': '',
+                'torre_casa': '',
+                'pavimento': '',
+                'unidade': '',
+                'qtdade_esquadrias': []
+            }
+            
+            # Adicionar ao dicionário de ambientes
+            if not ambientes:
+                ambientes = {}
+            ambientes[new_index] = novo_ambiente
+            
+            # Criar novo campo
+            new_field = create_ambientes_field(new_index, esquadrias, novo_ambiente)
+            if not children:
+                children = []
+            children.append(new_field)
+            
+            return children, new_counter, ambientes
+    
+    # Deletar ambiente específico
+    elif 'delete-ambiente-btn' in triggered_prop and delete_clicks:
+        # Extrair o índice do ambiente a ser deletado do prop_id
+        try:
+            # Parse do JSON do ID do botão clicado
+            start_idx = triggered_prop.find('{')
+            end_idx = triggered_prop.find('}') + 1
+            button_id_str = triggered_prop[start_idx:end_idx]
+            button_id = json.loads(button_id_str)
+            ambiente_to_delete = button_id['index']
+            
+            # Verificar se algum botão de deletar foi clicado
+            if any(clicks and clicks > 0 for clicks in delete_clicks if clicks is not None):
+                # Remover do dicionário de ambientes
+                if ambiente_to_delete in ambientes:
+                    del ambientes[ambiente_to_delete]
+                
+                # Recriar todos os campos sem o deletado
+                new_children = []
+                for ambiente_key, ambiente_data in ambientes.items():
+                    field = create_ambientes_field(ambiente_key, esquadrias, ambiente_data)
+                    new_children.append(field)
+                
+                return new_children, counter, ambientes
+        except (json.JSONDecodeError, KeyError, ValueError):
+            pass
+    
+    return dash.no_update, dash.no_update, dash.no_update
 
 ##########################################################################################################
 
 @callback(
-    Output('campos-ambientes', 'children'),
-    Input('editable-table', 'data'),
-    Input('ambientes', 'data'),
+    [Output('campos-ambientes', 'children'),
+     Output("ambiente-counter", "data")],
+    [Input('editable-table', 'data'),
+     Input('ambientes', 'data')],
 )
-def campos_ambiente(esquadrias, ambientes):
+def campos_ambiente_inicial(esquadrias, ambientes):
+    
+    if not esquadrias or not ambientes:
+        return [], len(ambientes) if ambientes else 0
 
     esquadrias = pd.DataFrame(esquadrias)
-
     childrens = []
+    max_counter = 0
 
-    for ambiente in ambientes.keys():
-
-        children = create_ambientes_field(ambiente, esquadrias, ambientes[ambiente])
+    for ambiente_key, ambiente_data in ambientes.items():
+        # Extrair número do ambiente para manter controle do counter
+        if 'ambiente' in str(ambiente_key):
+            try:
+                num = int(str(ambiente_key).replace('ambiente', ''))
+                max_counter = max(max_counter, num)
+            except:
+                max_counter = max(max_counter, len(ambientes))
+        else:
+            max_counter = max(max_counter, len(ambientes))
+        
+        children = create_ambientes_field(ambiente_key, esquadrias, ambiente_data)
         childrens.append(children)
 
-    return childrens
+    return childrens, max_counter
     
 ##########################################################################################################
 
@@ -347,6 +439,11 @@ def campos_ambientes_calculados_esquadrias(area_ambiente, indicadores, esquadria
 
 
         return childrens
+
+##########################################################################################################
+
+# Callback removido para evitar conflitos com MATCH pattern
+# Os dados serão gerenciados através dos outros callbacks existentes
 
 ##########################################################################################################
 
