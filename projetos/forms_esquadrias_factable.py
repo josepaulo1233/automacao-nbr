@@ -388,8 +388,6 @@ def caracteristicas_das_esquadrias(data):
 
         coef_abertura = coeficientes_janela.get(tipo_de_janela, {}).get('Coef de abertura')
         coef_vidro = coeficientes_janela.get(tipo_de_janela, {}).get('Coef. De vidro')
-
-        print(f"Tipo de janela: {tipo_de_janela}, Coeficiente de abertura: {coef_abertura}, Coeficiente de vidro: {coef_vidro}")
         
         # Verificar se ambos os valores existem e são numéricos
         if largura is not None and altura is not None:

@@ -231,6 +231,10 @@ def campos_ambientes_calculados_esquadrias(area_ambiente, indicadores, esquadria
         # Motando as esquadrias em um dataframe
         esquadrias = pd.DataFrame(esquadrias)
 
+        # Transforma coeficientes de abertura e de vidro em numéricos
+        esquadrias['Coeficiente de abertura'] = pd.to_numeric(esquadrias['Coeficiente de abertura'], errors='coerce').fillna(0)
+        esquadrias['Coeficiente de vidro'] = pd.to_numeric(esquadrias['Coeficiente de vidro'], errors='coerce').fillna(0)
+
         # Filtra apenas os indicadores presentes em indicadores_original
         esquadrias_filtradas = esquadrias.copy()
 
