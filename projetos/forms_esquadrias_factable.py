@@ -385,14 +385,11 @@ def caracteristicas_das_esquadrias(data):
         else:
             tipo_de_janela = tipo_janela_obj
 
-        # if isinstance(tipo_de_janela, dict):
-        #     tipo_de_janela = tipo_de_janela.get('value')
-
-        # if isinstance(tipo_de_janela, dict):
-        #     tipo_de_janela = tipo_de_janela.get('value')
 
         coef_abertura = coeficientes_janela.get(tipo_de_janela, {}).get('Coef de abertura')
         coef_vidro = coeficientes_janela.get(tipo_de_janela, {}).get('Coef. De vidro')
+
+        print(f"Tipo de janela: {tipo_de_janela}, Coeficiente de abertura: {coef_abertura}, Coeficiente de vidro: {coef_vidro}")
         
         # Verificar se ambos os valores existem e são numéricos
         if largura is not None and altura is not None:
@@ -407,8 +404,18 @@ def caracteristicas_das_esquadrias(data):
 
         # Atualizar coeficientes
         if tipo_de_janela is not None:
-            row['Coeficiente de abertura'] = coef_abertura
-            row['Coeficiente de vidro'] = coef_vidro
+            # Se o tipo de janela for "Outro", preservar valores existentes dos coeficientes
+            if tipo_de_janela == "Outro":
+                # Não atualizar os coeficientes para "Outro" - deixar que o usuário os edite manualmente
+                # Só inicializar se não existirem ainda
+                if 'Coeficiente de abertura' not in row:
+                    row['Coeficiente de abertura'] = None
+                if 'Coeficiente de vidro' not in row:
+                    row['Coeficiente de vidro'] = None
+            else:
+                # Para outros tipos de janela, atualizar normalmente
+                row['Coeficiente de abertura'] = coef_abertura
+                row['Coeficiente de vidro'] = coef_vidro
 
         # Calcular largura das folhas de vidro com a função calc_largura_folhas_de_vidro
         largura_folhas_vidro = calc_largura_folhas_de_vidro(
@@ -449,15 +456,11 @@ def caracteristicas_das_esquadrias(data):
         else:
             tipo_vidro_value = tipo_vidro_obj
         
-        # if isinstance(tipo_vidro_value, dict):
-        #     tipo_vidro_value = tipo_vidro_value.get('value')
-
         if tipo_vidro_value and 'vidros' in vidros:
             vidros_list = vidros['vidros']
             row['Fator solar'] = next((item['FATOR SOLAR'] for item in vidros_list if item['TIPO DE VIDRO'] == tipo_vidro_value), None)
             row['Trânsmitancia luminosa'] = next((item['TRANS LUMINOSA'] for item in vidros_list if item['TIPO DE VIDRO'] == tipo_vidro_value), None)
             row['Trânsmitancia térmica [W/(m²K)]'] = next((item['TRANS TERMICA'] for item in vidros_list if item['TIPO DE VIDRO'] == tipo_vidro_value), None)
-            # row['Cor do caixilho'] = next((item['COR CAIXILHO'] for item in vidros_list if item['TIPO DE VIDRO'] == tipo_vidro_value), None)
 
     return data
 
